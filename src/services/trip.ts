@@ -1,4 +1,4 @@
-import { createTrip, listTrips } from '@data/trip-repository';
+import { createTrip, deleteTripById, listTrips } from '@data/trip-repository';
 import { ApiError, Envs } from '@models/common';
 import {
   TRIP_API_GET_TRIPS_PATH,
@@ -186,6 +186,36 @@ export class TripService {
       throw new ApiError({
         code: 500,
         message: 'Failed to list trips',
+      });
+    }
+  }
+
+  async deleteTripRecord(id: string): Promise<{ deleted: boolean }> {
+    // validate request
+    if (!id) {
+      throw new ApiError({
+        code: 400,
+        message: 'Parameter id is required',
+      });
+    }
+    this.logger.debug(`Deleting trip record with id ${id}`);
+    // delete trip record
+    try {
+      // deleteTripRecord returns the number of deleted rows
+      const deleted = await deleteTripById(id);
+      this.logger.debug(
+        `The trip record with id ${id} was deleted: ${deleted}`,
+      );
+      return { deleted };
+    } catch (error: unknown) {
+      this.logger.error(
+        error instanceof Error
+          ? `Failed to delete trip record: ${error.message} - ${error.stack}`
+          : 'Failed to delete trip record',
+      );
+      throw new ApiError({
+        code: 500,
+        message: 'Failed to delete trip record',
       });
     }
   }

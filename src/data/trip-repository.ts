@@ -115,3 +115,12 @@ export const listTrips = async ({
     total: result.count,
   };
 };
+
+export const deleteTripById = async (id: string): Promise<boolean> => {
+  const deleteCount = await TripRecordModel.destroy({
+    where: {
+      id,
+    },
+  });
+  return deleteCount > 0;
+};

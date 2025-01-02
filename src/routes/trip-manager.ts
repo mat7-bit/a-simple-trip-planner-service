@@ -6,6 +6,7 @@ import { TripService } from '@services/trip';
 import { FastifyPluginAsync } from 'fastify';
 import dbConnect from '@plugins/db-connect';
 import { MANAGER_LIST_TRIP_RECORDS } from '@models/schemas/listTripRecords';
+import { MANAGER_DELETE_TRIP_RECORD } from '@models/schemas/deleteTripRecord';
 
 const manager: FastifyPluginAsync = async (fastify): Promise<void> => {
   // register db connection plugin
@@ -34,6 +35,17 @@ const manager: FastifyPluginAsync = async (fastify): Promise<void> => {
     },
     async function ({ query }) {
       const response = await service.listTripRecords(query);
+      return response;
+    },
+  );
+
+  fastify.delete<{ Params: { id: string } }>(
+    `${MANAGER_BASE_PATH}/trips/:id`,
+    {
+      schema: MANAGER_DELETE_TRIP_RECORD,
+    },
+    async function ({ params }) {
+      const response = await service.deleteTripRecord(params?.id);
       return response;
     },
   );

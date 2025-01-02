@@ -13,7 +13,7 @@ import {
   TRIP_API_KEY_HEADER,
   TRIP_API_QUERY_PARAMS,
 } from '@models/constants';
-import { createTrip, listTrips } from '@data/trip-repository';
+import { createTrip, listTrips, deleteTripById } from '@data/trip-repository';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -21,10 +21,12 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 jest.mock('@data/trip-repository', () => ({
   createTrip: jest.fn(),
   listTrips: jest.fn(),
+  deleteTripById: jest.fn(),
 }));
 
 const mockedCreateTrip = createTrip as jest.Mock;
 const mockedListTrips = listTrips as jest.Mock;
+const mockedDeleteTripById = deleteTripById as jest.Mock;
 
 const mockEnvs: Partial<Envs> = {
   TRIP_API_URL: 'https://mockapi.com',
@@ -488,6 +490,66 @@ describe('TripService listTripRecords method', () => {
 
     await expect(tripService.listTripRecords(request as any)).rejects.toThrow(
       new ApiError({ code: 500, message: 'Failed to list trips' }),
+    );
+  });
+});
+
+describe('TripService deleteTripRecord method', () => {
+  let tripService: TripService;
+
+  beforeEach(() => {
+    tripService = new TripService({
+      env: mockEnvs as unknown as Envs,
+      logger: mockedLogger as any,
+    });
+    jest.clearAllMocks();
+  });
+
+  it('should throw 400 error if id is missing', async () => {
+    const invalidRequests = [null, ''] as any[];
+
+    for (const invalidRequest of invalidRequests) {
+      await expect(
+        tripService.deleteTripRecord(invalidRequest as any),
+      ).rejects.toThrow(
+        new ApiError({
+          code: 400,
+          message: 'Parameter id is required',
+        }),
+      );
+    }
+  });
+
+  it('should delete trip and return the result', async () => {
+    const request = '1';
+
+    const mockedResult = true;
+
+    mockedDeleteTripById.mockResolvedValueOnce(mockedResult);
+
+    const result = await tripService.deleteTripRecord(request);
+
+    expect(mockedDeleteTripById).toHaveBeenCalledWith(request);
+
+    expect(result).toEqual({
+      deleted: mockedResult,
+    });
+  });
+
+  it('should throw a generic error if deleting trip fails', async () => {
+    const request = '1';
+
+    mockedDeleteTripById.mockRejectedValueOnce(new Error('mocked error'));
+
+    await expect(tripService.deleteTripRecord(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to delete trip record' }),
+    );
+
+    // test also for uncommon error object
+    mockedDeleteTripById.mockRejectedValueOnce('not an error object');
+
+    await expect(tripService.deleteTripRecord(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to delete trip record' }),
     );
   });
 });
