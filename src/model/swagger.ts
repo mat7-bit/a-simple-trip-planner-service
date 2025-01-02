@@ -1,5 +1,6 @@
 export const SWAGGER_TAGS = {
   TRIPS: 'Trips',
+  MANAGER: 'Manager',
 };
 
 export const SWAGGER_DEFINITION = {
@@ -18,7 +19,11 @@ export const SWAGGER_DEFINITION = {
   tags: [
     {
       name: SWAGGER_TAGS.TRIPS,
-      description: 'Trips endpoints',
+      description: 'Trips enumeration endpoints',
+    },
+    {
+      name: SWAGGER_TAGS.MANAGER,
+      description: 'Trips manager endpoints',
     },
   ],
 };

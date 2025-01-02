@@ -6,3 +6,5 @@ export const TRIP_API_QUERY_PARAMS = {
 export const TRIP_API_KEY_HEADER = 'x-api-key';
 
 export const FIND_SORTED_TRIPS_PATH = '/trips';
+
+export const MANAGER_BASE_PATH = '/manager';

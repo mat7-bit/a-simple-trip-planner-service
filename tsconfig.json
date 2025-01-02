@@ -11,6 +11,8 @@
       "@data/*": ["src/data/*"],
       "@models": ["src/model/index"],
       "@models/*": ["src/model/*"],
+      "@plugins": ["src/plugins/index"],
+      "@plugins/*": ["src/plugins/*"],
       "@services": ["src/services/index"],
       "@services/*": ["src/services/*"],
       "@tools": ["src/tools/index"],

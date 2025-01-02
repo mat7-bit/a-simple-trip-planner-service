@@ -2,6 +2,7 @@
 import { TripService } from './trip';
 import axios from 'axios';
 import {
+  BaseTripRecord,
   FIND_SORTED_TRIPS_SORT_BY_VALUES,
   FindSortedTripsRequest,
   SUPPORTED_TRIP_POINTS_LIST,
@@ -12,11 +13,22 @@ import {
   TRIP_API_KEY_HEADER,
   TRIP_API_QUERY_PARAMS,
 } from '@models/constants';
+import { createTrip, listTrips, deleteTripById } from '@data/trip-repository';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
-const mockEnvs: Envs = {
+jest.mock('@data/trip-repository', () => ({
+  createTrip: jest.fn(),
+  listTrips: jest.fn(),
+  deleteTripById: jest.fn(),
+}));
+
+const mockedCreateTrip = createTrip as jest.Mock;
+const mockedListTrips = listTrips as jest.Mock;
+const mockedDeleteTripById = deleteTripById as jest.Mock;
+
+const mockEnvs: Partial<Envs> = {
   TRIP_API_URL: 'https://mockapi.com',
   TRIP_API_KEY: 'mock-api-key',
   LOG_LEVEL: 'error',
@@ -34,7 +46,7 @@ describe('TripService findSortedTrips method', () => {
 
   beforeEach(() => {
     tripService = new TripService({
-      env: mockEnvs,
+      env: mockEnvs as unknown as Envs,
       logger: mockedLogger as any,
     });
     jest.clearAllMocks();
@@ -241,6 +253,303 @@ describe('TripService findSortedTrips method', () => {
 
     await expect(tripService.findSortedTrips(request)).rejects.toThrow(
       new ApiError({ code: 500, message: 'Failed to fetch trips' }),
+    );
+  });
+});
+
+describe('TripService createTripRecord method', () => {
+  let tripService: TripService;
+
+  beforeEach(() => {
+    tripService = new TripService({
+      env: mockEnvs as unknown as Envs,
+      logger: mockedLogger as any,
+    });
+    jest.clearAllMocks();
+  });
+
+  it('should throw 400 error if trip request is invalid', async () => {
+    const invalidRequests = [
+      { origin: 'ABC', destination: 'ABC', startDate: new Date() },
+      { origin: 'ABC', destination: 'DEF', createdBy: 'someone' },
+      { origin: 'ABC', startDate: new Date(), createdBy: 'someone' },
+      { destination: 'ABC', startDate: new Date(), createdBy: 'someone' },
+      null,
+      {},
+    ] as BaseTripRecord[];
+
+    for (const invalidRequest of invalidRequests) {
+      await expect(
+        tripService.createTripRecord(invalidRequest as any),
+      ).rejects.toThrow(
+        new ApiError({
+          code: 400,
+          message:
+            'Parameters origin, destination, createdBy and startDate are required',
+        }),
+      );
+    }
+
+    const invalidRequestsWithNotExistingPoints = [
+      // unsupported destination
+      {
+        origin: SUPPORTED_TRIP_POINTS_LIST[0],
+        destination: 'ABC',
+        startDate: new Date(),
+        createdBy: 'someone',
+      },
+      // unsupported origin
+      {
+        destination: SUPPORTED_TRIP_POINTS_LIST[0],
+        origin: 'ABC',
+        startDate: new Date(),
+        createdBy: 'someone',
+      },
+    ];
+
+    for (const invalidRequest of invalidRequestsWithNotExistingPoints) {
+      await expect(
+        tripService.createTripRecord(invalidRequest as any),
+      ).rejects.toThrow(
+        new ApiError({
+          code: 400,
+          message:
+            'Parameters origin and destination must be one of the supported points',
+        }),
+      );
+    }
+  });
+
+  it('should create a trip and return it', async () => {
+    const request = {
+      origin: SUPPORTED_TRIP_POINTS_LIST[0],
+      destination: SUPPORTED_TRIP_POINTS_LIST[1],
+      startDate: '2021-01-01T00:00:00.000Z',
+      createdBy: 'someone',
+      description: 'mocked trip',
+    };
+
+    const mockedResult = {
+      ...request,
+      id: '1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null as unknown as Date,
+    };
+
+    mockedCreateTrip.mockResolvedValueOnce(mockedResult);
+
+    const result = await tripService.createTripRecord(
+      request as unknown as BaseTripRecord,
+    );
+
+    expect(mockedCreateTrip).toHaveBeenCalledWith({
+      origin: request.origin,
+      destination: request.destination,
+      startDate: new Date(request.startDate),
+      createdBy: request.createdBy,
+      description: request.description,
+    });
+
+    expect(result).toEqual(mockedResult);
+  });
+
+  it('should throw a generic error if creating a trip fails', async () => {
+    const request = {
+      origin: SUPPORTED_TRIP_POINTS_LIST[0],
+      destination: SUPPORTED_TRIP_POINTS_LIST[1],
+      startDate: '2021-01-01T00:00:00.000Z',
+      createdBy: 'someone',
+      description: 'mocked trip',
+    };
+
+    mockedCreateTrip.mockRejectedValueOnce(new Error('mocked error'));
+
+    await expect(tripService.createTripRecord(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to create trip record' }),
+    );
+
+    // test also for uncommon error object
+    mockedCreateTrip.mockRejectedValueOnce('not an error object');
+
+    await expect(tripService.createTripRecord(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to create trip record' }),
+    );
+  });
+});
+
+describe('TripService listTripRecords method', () => {
+  let tripService: TripService;
+
+  beforeEach(() => {
+    tripService = new TripService({
+      env: mockEnvs as unknown as Envs,
+      logger: mockedLogger as any,
+    });
+    jest.clearAllMocks();
+  });
+
+  it('should throw 400 error if list request is invalid', async () => {
+    const invalidRequests = [null, {}] as any[];
+
+    for (const invalidRequest of invalidRequests) {
+      await expect(
+        tripService.listTripRecords(invalidRequest as any),
+      ).rejects.toThrow(
+        new ApiError({
+          code: 400,
+          message: 'Parameter createdBy is required',
+        }),
+      );
+    }
+  });
+
+  it('should list trips', async () => {
+    const request = {
+      createdBy: 'someone',
+    };
+
+    const mockedResult = {
+      trips: [
+        {
+          origin: SUPPORTED_TRIP_POINTS_LIST[0],
+          destination: SUPPORTED_TRIP_POINTS_LIST[1],
+          startDate: '2021-01-01T00:00:00.000Z',
+          createdBy: request.createdBy,
+          description: 'mocked trip',
+          id: '1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null as unknown as Date,
+        },
+      ],
+      page: 1,
+      limit: 10,
+      total: 1,
+    };
+
+    mockedListTrips.mockResolvedValueOnce(mockedResult);
+
+    const result = await tripService.listTripRecords(request as any);
+
+    expect(mockedListTrips).toHaveBeenCalledWith({
+      createdBy: request.createdBy,
+    });
+
+    expect(result).toEqual(mockedResult);
+  });
+
+  it('should list trips using pagination input', async () => {
+    const request = {
+      createdBy: 'someone',
+      page: 1,
+      limit: 10,
+    };
+
+    const mockedResult = {
+      trips: [
+        {
+          origin: SUPPORTED_TRIP_POINTS_LIST[0],
+          destination: SUPPORTED_TRIP_POINTS_LIST[1],
+          startDate: '2021-01-01T00:00:00.000Z',
+          createdBy: request.createdBy,
+          description: 'mocked trip',
+          id: '1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null as unknown as Date,
+        },
+      ],
+      page: request.page,
+      limit: request.limit,
+      total: 1,
+    };
+
+    mockedListTrips.mockResolvedValueOnce(mockedResult);
+
+    const result = await tripService.listTripRecords(request as any);
+
+    expect(mockedListTrips).toHaveBeenCalledWith(request);
+
+    expect(result).toEqual(mockedResult);
+  });
+
+  it('should throw a generic error if listing trips fails', async () => {
+    const request = {
+      createdBy: 'someone',
+    };
+
+    mockedListTrips.mockRejectedValueOnce(new Error('mocked error'));
+
+    await expect(tripService.listTripRecords(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to list trips' }),
+    );
+
+    // test also for uncommon error object
+    mockedListTrips.mockRejectedValueOnce('not an error object');
+
+    await expect(tripService.listTripRecords(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to list trips' }),
+    );
+  });
+});
+
+describe('TripService deleteTripRecord method', () => {
+  let tripService: TripService;
+
+  beforeEach(() => {
+    tripService = new TripService({
+      env: mockEnvs as unknown as Envs,
+      logger: mockedLogger as any,
+    });
+    jest.clearAllMocks();
+  });
+
+  it('should throw 400 error if id is missing', async () => {
+    const invalidRequests = [null, ''] as any[];
+
+    for (const invalidRequest of invalidRequests) {
+      await expect(
+        tripService.deleteTripRecord(invalidRequest as any),
+      ).rejects.toThrow(
+        new ApiError({
+          code: 400,
+          message: 'Parameter id is required',
+        }),
+      );
+    }
+  });
+
+  it('should delete trip and return the result', async () => {
+    const request = '1';
+
+    const mockedResult = true;
+
+    mockedDeleteTripById.mockResolvedValueOnce(mockedResult);
+
+    const result = await tripService.deleteTripRecord(request);
+
+    expect(mockedDeleteTripById).toHaveBeenCalledWith(request);
+
+    expect(result).toEqual({
+      deleted: mockedResult,
+    });
+  });
+
+  it('should throw a generic error if deleting trip fails', async () => {
+    const request = '1';
+
+    mockedDeleteTripById.mockRejectedValueOnce(new Error('mocked error'));
+
+    await expect(tripService.deleteTripRecord(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to delete trip record' }),
+    );
+
+    // test also for uncommon error object
+    mockedDeleteTripById.mockRejectedValueOnce('not an error object');
+
+    await expect(tripService.deleteTripRecord(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to delete trip record' }),
     );
   });
 });

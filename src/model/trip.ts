@@ -80,3 +80,31 @@ export const SUPPORTED_TRIP_POINTS_LIST = [
 ];
 
 export const SUPPORTED_TRIP_POINTS = new Set(SUPPORTED_TRIP_POINTS_LIST);
+
+export interface BaseTripRecord {
+  description?: string;
+  origin: string;
+  destination: string;
+  startDate: Date;
+  createdBy: string;
+}
+
+export interface TripRecord extends BaseTripRecord {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+}
+
+export interface ListTripsRequest {
+  createdBy: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListTripsResult {
+  trips: TripRecord[];
+  page: number;
+  limit: number;
+  total: number;
+}
