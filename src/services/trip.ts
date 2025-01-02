@@ -1,3 +1,4 @@
+import { createTrip } from '@data/trip-repository';
 import { ApiError, Envs } from '@models/common';
 import {
   TRIP_API_GET_TRIPS_PATH,
@@ -5,12 +6,15 @@ import {
   TRIP_API_QUERY_PARAMS,
 } from '@models/constants';
 import {
+  BaseTripRecord,
   FIND_SORTED_TRIPS_SORT_BY_VALUES,
   FindSortedTripsRequest,
   FindTripResponse,
   SUPPORTED_TRIP_POINTS,
+  TripRecord,
   TripApiRequest,
 } from '@models/trip';
+import { toDateType } from '@tools/date';
 import axios from 'axios';
 import { FastifyBaseLogger } from 'fastify';
 
@@ -102,5 +106,59 @@ export class TripService {
     });
     this.logger.debug(`Sorted ${sortedTrips.length} trips`);
     return sortedTrips;
+  }
+
+  async createTripRecord(request: BaseTripRecord): Promise<TripRecord> {
+    // validate request
+    if (
+      !request?.origin ||
+      !request?.destination ||
+      !request?.startDate ||
+      !request?.createdBy
+    ) {
+      throw new ApiError({
+        code: 400,
+        message:
+          'Parameters origin, destination, createdBy and startDate are required',
+      });
+    }
+    const { origin, destination, startDate, createdBy, description } = request;
+    if (
+      !SUPPORTED_TRIP_POINTS.has(origin) ||
+      !SUPPORTED_TRIP_POINTS.has(destination)
+    ) {
+      throw new ApiError({
+        code: 400,
+        message:
+          'Parameters origin and destination must be one of the supported points',
+      });
+    }
+    this.logger.debug(
+      `Creating trip record from ${origin} to ${destination} for user ${createdBy}`,
+    );
+    try {
+      // fastify validation ensure that the startDate property is a valid date-time string, but it doesn't parse it
+      const parsedStartDate = toDateType(startDate);
+      const result = await createTrip({
+        origin,
+        destination,
+        startDate: parsedStartDate,
+        createdBy,
+        description,
+      });
+      this.logger.debug(`Created trip record with id ${result.id}`);
+      return result;
+    } catch (error: unknown) {
+      // avoid to expose the internal api error, simply log it
+      this.logger.error(
+        error instanceof Error
+          ? `Failed to create trip record: ${error.message} - ${error.stack}`
+          : 'Failed to create trip record',
+      );
+      throw new ApiError({
+        code: 500,
+        message: 'Failed to create trip record',
+      });
+    }
   }
 }

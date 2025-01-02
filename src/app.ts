@@ -17,6 +17,8 @@ const app: FastifyPluginAsync<AppOptions> = async (
   await fastify.register(AutoLoad, {
     dir: join(__dirname, 'plugins'),
     options: opts,
+    // ignore db-connect plugin since it'll be loaded for a limited set of routes
+    ignorePattern: /(?:\.test\.js|db-connect\.js)$/,
   });
 
   // override log level using env
