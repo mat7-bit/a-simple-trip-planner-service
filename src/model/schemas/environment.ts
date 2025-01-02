@@ -1,14 +1,16 @@
-import { ENV_ITEMS } from "../constants";
-
 export const ENVIRONMENT_SCHEMA = {
   type: 'object',
-  required: [
-    'LOG_LEVEL',
-  ],
+  required: ['TRIP_API_URL', 'TRIP_API_KEY'],
   properties: {
-    [ENV_ITEMS.LOG_LEVEL]: {
+    LOG_LEVEL: {
       type: 'string',
       default: 'WARN',
+    },
+    TRIP_API_URL: {
+      type: 'string',
+    },
+    TRIP_API_KEY: {
+      type: 'string',
     },
   },
 };

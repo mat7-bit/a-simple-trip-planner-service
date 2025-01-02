@@ -1,6 +1,6 @@
 export const SWAGGER_TAGS = {
-  'HEALTHCHECK': 'Healthcheck',
-}
+  TRIPS: 'Trips',
+};
 
 export const SWAGGER_DEFINITION = {
   info: {
@@ -17,8 +17,8 @@ export const SWAGGER_DEFINITION = {
   produces: ['application/json'],
   tags: [
     {
-      name: SWAGGER_TAGS.HEALTHCHECK,
-      description: 'Healthcheck endpoints',
+      name: SWAGGER_TAGS.TRIPS,
+      description: 'Trips endpoints',
     },
   ],
 };
