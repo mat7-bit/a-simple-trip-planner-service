@@ -1,10 +1,11 @@
 import { Envs } from '@models/common';
 import { MANAGER_BASE_PATH } from '@models/constants';
 import { MANAGER_CREATE_TRIP_RECORD } from '@models/schemas/createTripRecord';
-import { BaseTripRecord } from '@models/trip';
+import { BaseTripRecord, ListTripsRequest } from '@models/trip';
 import { TripService } from '@services/trip';
 import { FastifyPluginAsync } from 'fastify';
 import dbConnect from '@plugins/db-connect';
+import { MANAGER_LIST_TRIP_RECORDS } from '@models/schemas/listTripRecords';
 
 const manager: FastifyPluginAsync = async (fastify): Promise<void> => {
   // register db connection plugin
@@ -22,6 +23,17 @@ const manager: FastifyPluginAsync = async (fastify): Promise<void> => {
     },
     async function ({ body }) {
       const response = await service.createTripRecord(body);
+      return response;
+    },
+  );
+
+  fastify.get<{ Querystring: ListTripsRequest }>(
+    `${MANAGER_BASE_PATH}/trips`,
+    {
+      schema: MANAGER_LIST_TRIP_RECORDS,
+    },
+    async function ({ query }) {
+      const response = await service.listTripRecords(query);
       return response;
     },
   );

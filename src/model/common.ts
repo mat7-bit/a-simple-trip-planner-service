@@ -26,3 +26,8 @@ export interface SequelizeConfig {
   registerFns?: SequelizeRegisterFunction[];
   logger: FastifyBaseLogger;
 }
+
+export const PAGINATION_DEFAULT_PARAMS = {
+  PAGE: 1,
+  LIMIT: 10,
+};

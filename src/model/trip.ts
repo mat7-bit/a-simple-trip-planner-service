@@ -95,3 +95,16 @@ export interface TripRecord extends BaseTripRecord {
   updatedAt: Date;
   deletedAt?: Date;
 }
+
+export interface ListTripsRequest {
+  createdBy: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListTripsResult {
+  trips: TripRecord[];
+  page: number;
+  limit: number;
+  total: number;
+}

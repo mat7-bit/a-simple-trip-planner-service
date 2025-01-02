@@ -1,4 +1,10 @@
-import { BaseTripRecord, TripRecord } from '@models/trip';
+import { PAGINATION_DEFAULT_PARAMS } from '@models/common';
+import {
+  BaseTripRecord,
+  ListTripsRequest,
+  ListTripsResult,
+  TripRecord,
+} from '@models/trip';
 import {
   DataTypes,
   InferAttributes,
@@ -83,4 +89,29 @@ export const createTrip = async (
     updatedAt: now,
   });
   return trip.toJSON();
+};
+
+export const listTrips = async ({
+  createdBy,
+  page,
+  limit: optLimit,
+}: ListTripsRequest): Promise<ListTripsResult> => {
+  const limit = optLimit || PAGINATION_DEFAULT_PARAMS.LIMIT;
+  const offset =
+    (page > 0 ? (page || PAGINATION_DEFAULT_PARAMS.PAGE) - 1 : 0) * limit;
+  const pagination = { limit, offset };
+  const result = await TripRecordModel.findAndCountAll({
+    where: {
+      createdBy,
+      deletedAt: null,
+    },
+    order: [['updatedAt', 'DESC']],
+    ...pagination,
+  });
+  return {
+    trips: result.rows.map(trip => trip.toJSON()),
+    page: page || PAGINATION_DEFAULT_PARAMS.PAGE,
+    limit,
+    total: result.count,
+  };
 };

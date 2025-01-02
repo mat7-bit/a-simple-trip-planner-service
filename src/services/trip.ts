@@ -1,4 +1,4 @@
-import { createTrip } from '@data/trip-repository';
+import { createTrip, listTrips } from '@data/trip-repository';
 import { ApiError, Envs } from '@models/common';
 import {
   TRIP_API_GET_TRIPS_PATH,
@@ -13,6 +13,8 @@ import {
   SUPPORTED_TRIP_POINTS,
   TripRecord,
   TripApiRequest,
+  ListTripsResult,
+  ListTripsRequest,
 } from '@models/trip';
 import { toDateType } from '@tools/date';
 import axios from 'axios';
@@ -158,6 +160,32 @@ export class TripService {
       throw new ApiError({
         code: 500,
         message: 'Failed to create trip record',
+      });
+    }
+  }
+
+  async listTripRecords(request: ListTripsRequest): Promise<ListTripsResult> {
+    // validate request
+    if (!request?.createdBy) {
+      throw new ApiError({
+        code: 400,
+        message: 'Parameter createdBy is required',
+      });
+    }
+    this.logger.debug(`Listing trips for user ${request.createdBy}`);
+    try {
+      const result = await listTrips(request);
+      this.logger.debug(`Found ${result.trips.length}/${result.total} trips`);
+      return result;
+    } catch (error: unknown) {
+      this.logger.error(
+        error instanceof Error
+          ? `Failed to list trips: ${error.message} - ${error.stack}`
+          : 'Failed to list trips',
+      );
+      throw new ApiError({
+        code: 500,
+        message: 'Failed to list trips',
       });
     }
   }

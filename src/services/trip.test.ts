@@ -13,16 +13,18 @@ import {
   TRIP_API_KEY_HEADER,
   TRIP_API_QUERY_PARAMS,
 } from '@models/constants';
-import { createTrip } from '@data/trip-repository';
+import { createTrip, listTrips } from '@data/trip-repository';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 jest.mock('@data/trip-repository', () => ({
   createTrip: jest.fn(),
+  listTrips: jest.fn(),
 }));
 
 const mockedCreateTrip = createTrip as jest.Mock;
+const mockedListTrips = listTrips as jest.Mock;
 
 const mockEnvs: Partial<Envs> = {
   TRIP_API_URL: 'https://mockapi.com',
@@ -262,7 +264,6 @@ describe('TripService createTripRecord method', () => {
       logger: mockedLogger as any,
     });
     jest.clearAllMocks();
-    mockedCreateTrip.mockReset();
   });
 
   it('should throw 400 error if trip request is invalid', async () => {
@@ -371,6 +372,122 @@ describe('TripService createTripRecord method', () => {
 
     await expect(tripService.createTripRecord(request as any)).rejects.toThrow(
       new ApiError({ code: 500, message: 'Failed to create trip record' }),
+    );
+  });
+});
+
+describe('TripService listTripRecords method', () => {
+  let tripService: TripService;
+
+  beforeEach(() => {
+    tripService = new TripService({
+      env: mockEnvs as unknown as Envs,
+      logger: mockedLogger as any,
+    });
+    jest.clearAllMocks();
+  });
+
+  it('should throw 400 error if list request is invalid', async () => {
+    const invalidRequests = [null, {}] as any[];
+
+    for (const invalidRequest of invalidRequests) {
+      await expect(
+        tripService.listTripRecords(invalidRequest as any),
+      ).rejects.toThrow(
+        new ApiError({
+          code: 400,
+          message: 'Parameter createdBy is required',
+        }),
+      );
+    }
+  });
+
+  it('should list trips', async () => {
+    const request = {
+      createdBy: 'someone',
+    };
+
+    const mockedResult = {
+      trips: [
+        {
+          origin: SUPPORTED_TRIP_POINTS_LIST[0],
+          destination: SUPPORTED_TRIP_POINTS_LIST[1],
+          startDate: '2021-01-01T00:00:00.000Z',
+          createdBy: request.createdBy,
+          description: 'mocked trip',
+          id: '1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null as unknown as Date,
+        },
+      ],
+      page: 1,
+      limit: 10,
+      total: 1,
+    };
+
+    mockedListTrips.mockResolvedValueOnce(mockedResult);
+
+    const result = await tripService.listTripRecords(request as any);
+
+    expect(mockedListTrips).toHaveBeenCalledWith({
+      createdBy: request.createdBy,
+    });
+
+    expect(result).toEqual(mockedResult);
+  });
+
+  it('should list trips using pagination input', async () => {
+    const request = {
+      createdBy: 'someone',
+      page: 1,
+      limit: 10,
+    };
+
+    const mockedResult = {
+      trips: [
+        {
+          origin: SUPPORTED_TRIP_POINTS_LIST[0],
+          destination: SUPPORTED_TRIP_POINTS_LIST[1],
+          startDate: '2021-01-01T00:00:00.000Z',
+          createdBy: request.createdBy,
+          description: 'mocked trip',
+          id: '1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null as unknown as Date,
+        },
+      ],
+      page: request.page,
+      limit: request.limit,
+      total: 1,
+    };
+
+    mockedListTrips.mockResolvedValueOnce(mockedResult);
+
+    const result = await tripService.listTripRecords(request as any);
+
+    expect(mockedListTrips).toHaveBeenCalledWith(request);
+
+    expect(result).toEqual(mockedResult);
+  });
+
+  it('should throw a generic error if listing trips fails', async () => {
+    const request = {
+      createdBy: 'someone',
+    };
+
+    mockedListTrips.mockRejectedValueOnce(new Error('mocked error'));
+
+    await expect(tripService.listTripRecords(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to list trips' }),
+    );
+
+    // test also for uncommon error object
+    mockedListTrips.mockRejectedValueOnce('not an error object');
+
+    await expect(tripService.listTripRecords(request as any)).rejects.toThrow(
+      new ApiError({ code: 500, message: 'Failed to list trips' }),
     );
   });
 });
