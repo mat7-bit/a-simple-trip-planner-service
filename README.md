@@ -6,7 +6,7 @@ This project is a demo implementation of a trip planner REST APIs using the foll
 - **fastify**: 5.x.x
 - **postgres**: latest
 
-The service wraps a demo api which produces trip solution between a fixed set of origin and destionation.
+The service wraps a demo api which produces trip solutions between a fixed set of origin and destionation.
 
 ## Usage
 
@@ -19,13 +19,13 @@ After that, choose your run method.
 
 You could execute the service in your local environment using the fastify-cli bundled within the project dependencies.
 
-Ensure to have nodejs version 22 installed. In order to make the execution easier, a ```.nvmrc``` file is included. Install the nvm tool and then execute
+Ensure to have nodejs version 22 installed. In order to make the execution easier, a ```.nvmrc``` file is included. Install the nvm tool and then execute:
 
 ```
 nvm use
 ```
 
-Remember to install project dependencies using
+Remember to install project dependencies using:
 
 ```
 npm install
