@@ -31,7 +31,7 @@ Remember to install project dependencies using:
 npm install
 ```
 
-You're ready to start. There are multiple npm task that will start your service.
+You're ready to start. There are multiple npm tasks that will start your service.
 
 - Use the *dev* task to start a local instance with code live reloading support:
 
@@ -46,12 +46,12 @@ npm run dev
 npm run debug
 ```
 
-Note: The debug session has no live reload. A VSCode debug configuration is included in the repository, so debugging should be ready to start. Simply import the `.vscode/launch.json` config and attach the remote debugger to the live session.
+Note: The debug session has no live reload. A VSCode debug configuration is included in the repository, so debugging should be ready to start. Import the `.vscode/launch.json` config and attach the remote debugger to the live session.
 
-After the start up, the server will be available under the 3000 port. A generated swagger should be
+After the start up, the server will be available under the port 3000. A generated swagger should be
 reachable [here](http://localhost:3000/swagger) (see the swagger section for more details).
 
-At this point, probably you're getting a db connection error. You need a running postgres instance in order to use this microservice. The easiest way to bootstrap a ready-to-use instance is using the embedded `./local-env/docker-compose-base.yml` file. Supposing to have a running docker daemon on your machine, you can start it with:
+At this point, probably you're encountering a db connection error. To use this microservice, you need a running PostgreSQL instance. The easiest way to bootstrap a ready-to-use instance is using the embedded `./local-env/docker-compose-base.yml` file. Supposing to have a running docker daemon on your machine, you can start it with:
 
 ```
 docker-compose -f ./local-env/docker-compose-base.yml up -d
@@ -61,9 +61,9 @@ Your `.env` file generated from the `.env.example` should be ready to connect to
 
 ### Docker run
 
-A Dockerfile file is included in the repository. You could build a docker image starting from it and then run within any active docker instance. Remember to setup the environment variables before starting.
+You can build a docker image starting from the `Dockerfile` file included in the repository. You can run the image within any active docker instance. Remember to setup the environment variables before starting.
 
-For testing purpose, an all in one docker compose in provided (the `./local-env/docker-compose-full.yml` file). This file contains a reference to the microservice Dockerfile plus a postgres instance. The environment variables for the db connection are already setted up, so you have to create a *.env* containing only the `TRIP_API_URL` and `TRIP_API_KEY` variables. You could also use the same *.env* file of the local run section, the db variables are ignored.
+For testing purposes, an all-in-one docker compose file is provided (the `./local-env/docker-compose-full.yml` file). This file contains a reference to the microservice's Dockerfile and a PostgreSQL instance. The environment variables for the db connection are already set up, so you have to create a *.env* containing only the `TRIP_API_URL` and `TRIP_API_KEY` variables. Alternatively, you can reuse the same .env file from the local run section, the db variables will be ignored.
 
 In order to run the all in one setup, start from the project root directory and use:
 
@@ -104,8 +104,6 @@ Linking the IDE formatter with eslint config is highly suggested.
 
 ## Enviroment variables
 
-Here's a formatted Markdown table for your environment variables:
-
 | Name | Description | Values | Default Value | Mandatory |
 |------|-------------|---------|---------------|-----------|
 | LOG_LEVEL | The logger log level | A valid log level string | `warn` | No |
@@ -124,3 +122,9 @@ The swagger is dinamically generated from the json schemas definition under ```.
 
 Check the [fastify plugin](https://github.com/fastify/fastify-swagger) for more info.
 
+## More docs
+
+You can find some extra information under the docs directory:
+
+- [assumptions](./docs/assumptions.md)
+- [technical extra information](./docs/technical-info.md)
