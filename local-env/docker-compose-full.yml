@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: trip-planner-db-standalone
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: trip-planner
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data-standalone:/var/lib/postgresql/data
+
+  microservice:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: trip-planner-service-standalone
+    ports:
+      - "3000:3000"
+    environment:
+      LOG_LEVEL: debug
+      DB_HOST: trip-planner-db-standalone
+      DB_PORT: "5432"
+      DB_NAME: trip-planner
+      DB_USERNAME: test
+      DB_PASSWORD: test
+      TRIP_API_URL: ${TRIP_API_URL}
+      TRIP_API_KEY: ${TRIP_API_KEY}
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data-standalone:
