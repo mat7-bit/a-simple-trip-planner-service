@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: trip-planner-db
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: trip-planner
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
